@@ -1,43 +1,42 @@
-var toque = null;
+var listActiveTouches = new Array();
 
-var Toque = function(tapCallBack, leftCallBack, rightCallBack){
-    this.begin;
-    this.touch;
-    this.tap = tapCallBack;
-    this.swipeLeft = leftCallBack;
-    this.swipeRight = rightCallBack;
-
-    this.copyTouch = function(touch){
-        this.touch = {identifier: touch.identifier, pageX: touch.pageX, pageY: touch.pageY}
-    }
-}
-
-function addTouchEvent(htmlObj, listCallbacks){
-    toque = new Toque(listCallbacks[0], listCallbacks[1], listCallbacks[2]);
-    htmlObj.addEventListener("touchstart", touchStart, false);
-    htmlObj.addEventListener("touchend", touchEnd, false);
+var OurTouch = function(eventsAndCallbacks){
+    this.eventsAndCallbacks = eventsAndCallbacks;
+    
+    this.firstX;
+    this.firstY;
+    
+    this.startPressing;
 }
 
 function removeTouchEvent(htmlObj){
     htmlObj.removeEventListener("touchstart", touchStart, false);
     htmlObj.removeEventListener("touchend", touchEnd, false);
-    toque = null;
 }
 
-function touchStart(evento){
-    toque.begin = new Date().getTime();
-    toque.copyTouch(evento.changedTouches[0]);
+function touchStart(event, ourTouch){
 }
 
-function touchEnd(evento){
-    if(new Date().getTime() - toque.begin <= 500 && toque.touch.pageX - evento.changedTouches[0].screenX >= 75){
-        console.log("swipe right event");
-        toque.swipeRight();
-    }else if(new Date().getTime() - toque.begin <= 500 && toque.touch.pageX - evento.changedTouches[0].screenX <= -75){
-        console.log("swipe left event");
-        toque.swipeLeft();
+function touchMove(event, ourTouch){
+}
+
+function touchEnd(event, ourTouch){
+}
+
+function addTouchEvent(listHtmlObj, eventsAndCallbacks){
+    var ourTouch = new OurTouch(eventsAndCallbacks);
+    
+    if(listHtmlObj.constructor.toString().indexOf("Array") > -1){
+        for(var i = 0; i < listHtmlObj.length; i++){
+            listHtmlObj[i].addEventListener("touchstart", function(e){touchStart(e, ourTouch)}, false);
+            listHtmlObj[i].addEventListener("touchmove", function(e){touchMove(e, ourTouch)}, false);
+            listHtmlObj[i].addEventListener("touchend", function(e){touchEnd(e, ourTouch)}, false);
+            listHtmlObj[i].addEventListener("touchcancel", function(e){touchEnd(e, ourTouch)}, false);
+        }
     }else{
-        console.log("outra coisa que não o swipe");
-        toque.tap();
+        listHtmlObj.addEventListener("touchstart", function(e){touchStart(e, ourTouch)}, false);
+        listHtmlObj.addEventListener("touchmove", function(e){touchMove(e, ourTouch)}, false);
+        listHtmlObj.addEventListener("touchend", function(e){touchEnd(e, ourTouch)}, false);
+        listHtmlObj.addEventListener("touchcancel", function(e){touchEnd(e, ourTouch)}, false);
     }
 }
