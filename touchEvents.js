@@ -25,11 +25,12 @@ var OurTouchEvents = function(){
         }
     }
     
-    var OurTouch = function(touch){
+    var OurTouch = function(touch, first){
         var id = touch.identifier;
         var target = touch.target;
         var startPressing = new Date().getTime();
         var stopPressing = null;
+        var firstTouch = first;
         
         var firstScreenX = touch.screenX;
         var firstScreenY = touch.screenY;
@@ -51,6 +52,10 @@ var OurTouchEvents = function(){
         
         this.getTarget = function(){
             return target;
+        }
+        
+        this.isFirstTouch = function(){
+            return firstTouch;
         }
         
         this.getStartPressing = function(){
@@ -90,7 +95,7 @@ var OurTouchEvents = function(){
         }
         
         this.attrToString = function(){
-            return "{id : " + id + "\ntarget id : " + target.id + "\nstartPressing : " + startPressing + "\nstopPressing : " + stopPressing + "\nfirstScreenX : " + firstScreenX + "\nfirstScreenY : " + firstScreenY + "\nfirstPageX : " + firstPageX + "\nfirstPageY : " + firstPageY + "\nfirstClientX : " + firstClientX + "\nfirstClientY : " + firstClientY + "\nscreenX : " + this.screenX + "\nscreenY : " + this.screenY + "\npageX : " + this.pageX + "\npageY : " + this.pageY + "\nclientX : " + this.clientX + "\nclientY : " + this.clientY + "}";
+            return "{id : " + id + "\nisFirstTouch : " + firstTouch + "\ntarget id : " + target.id + "\nstartPressing : " + startPressing + "\nstopPressing : " + stopPressing + "\nfirstScreenX : " + firstScreenX + "\nfirstScreenY : " + firstScreenY + "\nfirstPageX : " + firstPageX + "\nfirstPageY : " + firstPageY + "\nfirstClientX : " + firstClientX + "\nfirstClientY : " + firstClientY + "\nscreenX : " + this.screenX + "\nscreenY : " + this.screenY + "\npageX : " + this.pageX + "\npageY : " + this.pageY + "\nclientX : " + this.clientX + "\nclientY : " + this.clientY + "}";
         }
     }
     
@@ -129,7 +134,11 @@ var OurTouchEvents = function(){
         activeOurTouchEvent = ourTouchEvent;
         activeOurTouchEvent.stillActive = true;
         for(var i = 0; i < event.changedTouches.length; i++){
-            activeOurTouchEvent.listOurTouches.push(new OurTouch(event.changedTouches[i]));
+            if(activeOurTouchEvent.listOurTouches.length <= 0){
+                activeOurTouchEvent.listOurTouches.push(new OurTouch(event.changedTouches[i], true));
+            }else{
+                activeOurTouchEvent.listOurTouches.push(new OurTouch(event.changedTouches[i], false));
+            }
         }
     }
 
@@ -137,6 +146,7 @@ var OurTouchEvents = function(){
         activeOurTouchEvent = ourTouchEvent;
         var touches = event.changedTouches;
         var size = touches.length;
+        var touchesMoved = new Array()
         for(var i = 0; i < size; i++){
             var index = activeOurTouchEvent.findOurTouch(touches[i].identifier);
             if(index >= 0){
@@ -146,6 +156,7 @@ var OurTouchEvents = function(){
                 activeOurTouchEvent.listOurTouches[index].pageY = touches[i].pageY;
                 activeOurTouchEvent.listOurTouches[index].clientX = touches[i].clientX;
                 activeOurTouchEvent.listOurTouches[index].clientY = touches[i].clientY;
+                touchesMoved.push(activeOurTouchEvent.listOurTouches[index]);
             }else{
                 console.log("touch not founded");
             }
@@ -154,6 +165,11 @@ var OurTouchEvents = function(){
 
     function touchEnd(event, ourTouchEvent){
         activeOurTouchEvent = ourTouchEvent;
+        
+        if(event.touches.length <= 0){
+            activeOurTouchEvent.stillActive = false;
+        }
+        
         var touches = event.changedTouches;
         var size = touches.length;
         var deactivatedTouches = new Array();
@@ -161,14 +177,17 @@ var OurTouchEvents = function(){
             var index = activeOurTouchEvent.findOurTouch(touches[i].identifier);
             if(index >= 0){
                 activeOurTouchEvent.listOurTouches[index].setStopPressing();
+                activeOurTouchEvent.listOurTouches[index].screenX = touches[i].screenX;
+                activeOurTouchEvent.listOurTouches[index].screenY = touches[i].screenY;
+                activeOurTouchEvent.listOurTouches[index].pageX = touches[i].pageX;
+                activeOurTouchEvent.listOurTouches[index].pageY = touches[i].pageY;
+                activeOurTouchEvent.listOurTouches[index].clientX = touches[i].clientX;
+                activeOurTouchEvent.listOurTouches[index].clientY = touches[i].clientY;
                 deactivatedTouches.push(activeOurTouchEvent.listOurTouches[index]);
                 activeOurTouchEvent.listOurTouches.splice(index, 1);
             }else{
                 console.log("touch not founded");
             }
-        }
-        if(event.touches.length <= 0){
-            activeOurTouchEvent.stillActive = false;
         }
     }
     
@@ -182,4 +201,3 @@ var OurTouchEvents = function(){
         return false;
     }
 }
-
