@@ -2,15 +2,16 @@ var OurTouchEvents = function(){
     var listOurTouches = new Array();
     var activeOurTouchEvent = null;
 
-    var OurTouchEvent = function(eventsAndCallbacks){
+    var OurTouchEvent = function(listHtmlObj, eventsAndCallbacks){
         this.id;
+        this.listHtmlObj = listHtmlObj;
         this.eventsAndCallbacks = eventsAndCallbacks;
         this.stillActive;
         this.listOurTouches = new Array();
         
         this.findOurTouch = function(id){
             for(var i = 0; i < listOurTouches.length; i++){
-                if(listOurTouches[i].getId() == id){
+                if(listOurTouches[i].id == id){
                     return i;
                 }
             }
@@ -21,6 +22,24 @@ var OurTouchEvents = function(){
             console.log("this id : " + this.id);
             for(var i = 0; i < this.listOurTouches.length; i++){
                 console.log(this.listOurTouches[i].attrToString + "\n");
+            }
+        }
+        
+        this.removeOurTouchEvent = function(){
+            var size = listHtmlObj.length;
+            for(var i = 0; i < size; i++){
+                this.listHtmlObj[i].removeEventListener("touchstart", function(e){touchStart(e, ourTouchEvent)}, false);
+                this.listHtmlObj[i].removeEventListener("touchmove", function(e){touchMove(e, ourTouchEvent)}, false);
+                this.listHtmlObj[i].removeEventListener("touchend", function(e){touchEnd(e, ourTouchEvent)}, false);
+                this.listHtmlObj[i].removeEventListener("touchcancel", function(e){touchEnd(e, ourTouchEvent)}, false);
+            }
+            
+            size = listOurTouches.length;
+            for(var i = 0; i < size; i++){
+                if(listOurTouches[i].id == this.id){
+                    listOurTouches.splice(i, 1);
+                    break;
+                }
             }
         }
     }
@@ -100,7 +119,14 @@ var OurTouchEvents = function(){
     }
     
     this.addTouchEvent = function (listHtmlObj, eventsAndCallbacks){
-        var ourTouchEvent = new OurTouchEvent(eventsAndCallbacks);
+        var localList;
+        if(listHtmlObj.constructor.toString().indexOf("Array") > -1){
+            localList = new Array();
+            localList.push(listHtmlObj);
+        }else{
+            localList = listHtmlObj;
+        }
+        var ourTouchEvent = new OurTouchEvent(localList, eventsAndCallbacks);
         
         
         do{
@@ -109,36 +135,33 @@ var OurTouchEvents = function(){
 
         listOurTouches.push(ourTouchEvent);
         
-        if(listHtmlObj.constructor.toString().indexOf("Array") > -1){
-            var size = listHtmlObj.length;
-            for(var i = 0; i < size; i++){
-                listHtmlObj[i].addEventListener("touchstart", function(e){touchStart(e, ourTouchEvent)}, false);
-                listHtmlObj[i].addEventListener("touchmove", function(e){touchMove(e, ourTouchEvent)}, false);
-                listHtmlObj[i].addEventListener("touchend", function(e){touchEnd(e, ourTouchEvent)}, false);
-                listHtmlObj[i].addEventListener("touchcancel", function(e){touchEnd(e, ourTouchEvent)}, false);
-            }
-        }else{
-            listHtmlObj.addEventListener("touchstart", function(e){touchStart(e, ourTouchEvent)}, false);
-            listHtmlObj.addEventListener("touchmove", function(e){touchMove(e, ourTouchEvent)}, false);
-            listHtmlObj.addEventListener("touchend", function(e){touchEnd(e, ourTouchEvent)}, false);
-            listHtmlObj.addEventListener("touchcancel", function(e){touchEnd(e, ourTouchEvent)}, false);
+        var size = localList.length;
+        for(var i = 0; i < size; i++){
+            localList[i].addEventListener("touchstart", function(e){touchStart(e, ourTouchEvent)}, false);
+            localList[i].addEventListener("touchmove", function(e){touchMove(e, ourTouchEvent)}, false);
+            localList[i].addEventListener("touchend", function(e){touchEnd(e, ourTouchEvent)}, false);
+            localList[i].addEventListener("touchcancel", function(e){touchEnd(e, ourTouchEvent)}, false);
         }
-    }
-
-    this.removeTouchEvent = function(htmlObj){
-        htmlObj.removeEventListener("touchstart", touchStart, false);
-        htmlObj.removeEventListener("touchend", touchEnd, false);
     }
 
     function touchStart(event, ourTouchEvent){
         activeOurTouchEvent = ourTouchEvent;
-        activeOurTouchEvent.stillActive = true;
+        var listNewOurTouch = new Array();
+        var newOurTouch;
         for(var i = 0; i < event.changedTouches.length; i++){
             if(activeOurTouchEvent.listOurTouches.length <= 0){
-                activeOurTouchEvent.listOurTouches.push(new OurTouch(event.changedTouches[i], true));
+                newOurTouch = new OurTouch(event.changedTouches[i], true);
+                activeOurTouchEvent.listOurTouches.push(newOurTouch);
+                listNewOurTouch.push(newOurTouch);
             }else{
-                activeOurTouchEvent.listOurTouches.push(new OurTouch(event.changedTouches[i], false));
+                newOurTouch = new OurTouch(event.changedTouches[i], false);
+                activeOurTouchEvent.listOurTouches.push(newOurTouch);
+                listNewOurTouch.push(newOurTouch);
             }
+        }
+        activeOurTouchEvent.stillActive = true;
+        if(activeOurTouchEvent.eventsAndCallbacks.hasOwnProperty("start")){
+            activeOurTouchEvent.eventsAndCallbacks.start(event, activeOurTouchEvent, listNewOurTouch);
         }
     }
 
@@ -160,6 +183,9 @@ var OurTouchEvents = function(){
             }else{
                 console.log("touch not founded");
             }
+        }
+        if(activeOurTouchEvent.eventsAndCallbacks.hasOwnProperty("moving")){
+            activeOurTouchEvent.eventsAndCallbacks.moving(event, activeOurTouchEvent, touchesMoved);
         }
     }
 
@@ -187,6 +213,24 @@ var OurTouchEvents = function(){
                 activeOurTouchEvent.listOurTouches.splice(index, 1);
             }else{
                 console.log("touch not founded");
+            }
+        }
+        
+        if(!activeOurTouchEvent.stillActive){
+            var ourTouch;
+            for(var i = 0; i < activeOurTouchEvent.listOurTouches.length; i++){
+                ourTouch = activeOurTouchEvent.listOurTouches[i]
+                if(ourTouch.isFirstTouch){
+                    if(ourTouch.getStopPressing() - ourTouch.getStartPressing() <= 300 && activeOurTouchEvent.eventsAndCallbacks.hasOwnProperty("tap")){
+                        activeOurTouchEvent.eventsAndCallbacks.tap(event, activeOurTouchEvent);
+                    }else if(ourTouch.getStopPressing() - ourTouch.getStartPressing() <= 500 && ourTouch.getFirstScreenX - ourTouch.screenX >= 75 && activeOurTouchEvent.eventsAndCallbacks.hasOwnProperty("swipeRight")){
+                        activeOurTouchEvent.eventsAndCallbacks.swipeRight(event, activeOurTouchEvent);
+                    }else if(ourTouch.getStopPressing() - ourTouch.getStartPressing() <= 500 && ourTouch.getFirstScreenX - ourTouch.screenX <= -75 && activeOurTouchEvent.eventsAndCallbacks.hasOwnProperty("swipeLeft")){
+                        activeOurTouchEvent.eventsAndCallbacks.swipeLeft(event, activeOurTouchEvent);
+                    }else if(activeOurTouchEvent.eventsAndCallbacks.hasOwnProperty("holded")){
+                        activeOurTouchEvent.eventsAndCallbacks.holded(event, activeOurTouchEvent);
+                    }
+                }
             }
         }
     }
