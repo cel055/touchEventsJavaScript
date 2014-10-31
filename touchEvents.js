@@ -2,16 +2,16 @@ var OurTouchEvents = function(){
     var listOurTouches = new Array();
     var activeOurTouchEvent = null;
 
-    var OurTouchEvent = function(listHtmlObj, eventsAndCallbacks){
+    var OurTouchEvent = function(listHtmlObjP, eventsAndCallbacksP){
         this.id;
-        this.listHtmlObj = listHtmlObj;
-        this.eventsAndCallbacks = eventsAndCallbacks;
+        this.listHtmlObj = listHtmlObjP;
+        this.eventsAndCallbacks = eventsAndCallbacksP;
         this.stillActive;
         this.listOurTouches = new Array();
         
         this.findOurTouch = function(id){
-            for(var i = 0; i < listOurTouches.length; i++){
-                if(listOurTouches[i].id == id){
+            for(var i = 0; i < this.listOurTouches.length; i++){
+                if(this.listOurTouches[i].getId() == id){
                     return i;
                 }
             }
@@ -21,12 +21,12 @@ var OurTouchEvents = function(){
         this.touchesToString = function(){
             console.log("this id : " + this.id);
             for(var i = 0; i < this.listOurTouches.length; i++){
-                console.log(this.listOurTouches[i].attrToString + "\n");
+                console.log(this.listOurTouches[i].attrToString() + "\n");
             }
         }
         
         this.removeOurTouchEvent = function(){
-            var size = listHtmlObj.length;
+            var size = this.listHtmlObj.length;
             for(var i = 0; i < size; i++){
                 this.listHtmlObj[i].removeEventListener("touchstart", function(e){touchStart(e, ourTouchEvent)}, false);
                 this.listHtmlObj[i].removeEventListener("touchmove", function(e){touchMove(e, ourTouchEvent)}, false);
@@ -34,7 +34,7 @@ var OurTouchEvents = function(){
                 this.listHtmlObj[i].removeEventListener("touchcancel", function(e){touchEnd(e, ourTouchEvent)}, false);
             }
             
-            size = listOurTouches.length;
+            size = this.listOurTouches.length;
             for(var i = 0; i < size; i++){
                 if(listOurTouches[i].id == this.id){
                     listOurTouches.splice(i, 1);
@@ -218,8 +218,8 @@ var OurTouchEvents = function(){
         
         if(!activeOurTouchEvent.stillActive){
             var ourTouch;
-            for(var i = 0; i < activeOurTouchEvent.listOurTouches.length; i++){
-                ourTouch = activeOurTouchEvent.listOurTouches[i]
+            for(var i = 0; i < deactivatedTouches.length; i++){
+                ourTouch = deactivatedTouches[i];
                 if(ourTouch.isFirstTouch){
                     if(ourTouch.getStopPressing() - ourTouch.getStartPressing() <= 300 && activeOurTouchEvent.eventsAndCallbacks.hasOwnProperty("tap")){
                         activeOurTouchEvent.eventsAndCallbacks.tap(event, activeOurTouchEvent);
