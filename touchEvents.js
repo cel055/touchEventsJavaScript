@@ -1,6 +1,21 @@
 var OurTouchEvents = function(){
     var listOurTouches = new Array();
     var activeOurTouchEvent = null;
+    var eventStartType;
+    var eventMoveType;
+    var eventEndType;
+    var eventCancelType;
+    if(window.MSPointerEvent){
+        eventStartType = "MSPointerDown";
+        eventMoveType = "MSPointerMove";
+        eventEndType = "MSPointerUp";
+        eventCancelType = "MSPointerCancel";
+    }else if(window.PointerEvent){
+        eventStartType = "pointerdown";
+        eventMoveType = "pointermove";
+        eventEndType = "pointerup";
+        eventCancelType = "pointercancel";
+    }
 
     var OurTouchEvent = function(listHtmlObjP, eventsAndCallbacksP){
         this.id;
@@ -64,6 +79,7 @@ var OurTouchEvents = function(){
         this.pageY = touch.pageY;
         this.clientX = touch.clientX;
         this.clientY = touch.clientY;
+        this.firstMove = true;
         
         this.getId = function(){
             return id;
@@ -140,7 +156,7 @@ var OurTouchEvents = function(){
             localList[i].addEventListener("touchstart", function(e){touchStart(e, ourTouchEvent)}, false);
             localList[i].addEventListener("touchmove", function(e){touchMove(e, ourTouchEvent)}, false);
             localList[i].addEventListener("touchend", function(e){touchEnd(e, ourTouchEvent)}, false);
-            localList[i].addEventListener("touchcancel", function(e){touchEnd(e, ourTouchEvent)}, false);
+            localList[i].addEventListener("touchcancel", function(e){touchCancel(e, ourTouchEvent)}, false);
         }
     }
 
@@ -169,17 +185,30 @@ var OurTouchEvents = function(){
         activeOurTouchEvent = ourTouchEvent;
         var touches = event.changedTouches;
         var size = touches.length;
-        var touchesMoved = new Array()
+        var touchesMoved = new Array();
+        var ourTouch;
+
         for(var i = 0; i < size; i++){
             var index = activeOurTouchEvent.findOurTouch(touches[i].identifier);
             if(index >= 0){
-                activeOurTouchEvent.listOurTouches[index].screenX = touches[i].screenX;
-                activeOurTouchEvent.listOurTouches[index].screenY = touches[i].screenY;
-                activeOurTouchEvent.listOurTouches[index].pageX = touches[i].pageX;
-                activeOurTouchEvent.listOurTouches[index].pageY = touches[i].pageY;
-                activeOurTouchEvent.listOurTouches[index].clientX = touches[i].clientX;
-                activeOurTouchEvent.listOurTouches[index].clientY = touches[i].clientY;
-                touchesMoved.push(activeOurTouchEvent.listOurTouches[index]);
+                ourTouch = activeOurTouchEvent.listOurTouches[index];
+                ourTouch.screenX = touches[i].screenX;
+                ourTouch.screenY = touches[i].screenY;
+                ourTouch.pageX = touches[i].pageX;
+                ourTouch.pageY = touches[i].pageY;
+                ourTouch.clientX = touches[i].clientX;
+                ourTouch.clientY = touches[i].clientY;
+                touchesMoved.push(ourTouch);
+
+                if(ourTouch.firstMove && (activeOurTouchEvent.eventsAndCallbacks.hasOwnProperty("swipeRight") || activeOurTouchEvent.eventsAndCallbacks.hasOwnProperty("swipeLeft")) && Math.abs(ourTouch.getFirstScreenX() - ourTouch.screenX) >= 10){
+                    event.preventDefault();
+                    ourTouch.firstMove = false;
+                    console.log("called prevent defaul swipe sides");
+                }else if(ourTouch.firstMove && (activeOurTouchEvent.eventsAndCallbacks.hasOwnProperty("swipeUp") || activeOurTouchEvent.eventsAndCallbacks.hasOwnProperty("swipeDown")) && Math.abs(ourTouch.getFirstScreenY() - ourTouch.screenY) >= 10){
+                    event.preventDefault();
+                    ourTouch.firstMove = false;
+                    console.log("called prevent defaul swipe up/down");
+                }
             }else{
                 console.log("touch not founded");
             }
@@ -237,6 +266,10 @@ var OurTouchEvents = function(){
         }
     }
     
+    function touchCancel(event, ourTouchEvent){
+        console.log("touch canceled");
+    }
+
     function notUniqueId(id){
         var size = listOurTouches.length;
         for(var i = 0; i < size; i++){
