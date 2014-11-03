@@ -210,7 +210,7 @@ var OurTouchEvents = function(){
                 activeOurTouchEvent.listOurTouches[index].clientX = touches[i].clientX;
                 activeOurTouchEvent.listOurTouches[index].clientY = touches[i].clientY;
                 deactivatedTouches.push(activeOurTouchEvent.listOurTouches[index]);
-                activeOurTouchEvent.listOurTouches.splice(index, 1);
+//                activeOurTouchEvent.listOurTouches.splice(index, 1);
             }else{
                 console.log("touch not founded");
             }
@@ -221,11 +221,13 @@ var OurTouchEvents = function(){
             for(var i = 0; i < deactivatedTouches.length; i++){
                 ourTouch = deactivatedTouches[i];
                 if(ourTouch.isFirstTouch){
-                    if(ourTouch.getStopPressing() - ourTouch.getStartPressing() <= 300 && activeOurTouchEvent.eventsAndCallbacks.hasOwnProperty("tap")){
+                    console.log("time pressed : " + (ourTouch.getStopPressing() - ourTouch.getStartPressing()));
+                    console.log("moved on X : " + (ourTouch.getFirstScreenX() - ourTouch.screenX));
+                    if(ourTouch.getStopPressing() - ourTouch.getStartPressing() <= 100 && activeOurTouchEvent.eventsAndCallbacks.hasOwnProperty("tap") && Math.abs(ourTouch.getFirstScreenX() - ourTouch.screenX) <= 5 && Math.abs(ourTouch.getFirstScreenY() - ourTouch.screenY) <= 5){
                         activeOurTouchEvent.eventsAndCallbacks.tap(event, activeOurTouchEvent);
-                    }else if(ourTouch.getStopPressing() - ourTouch.getStartPressing() <= 500 && ourTouch.getFirstScreenX - ourTouch.screenX >= 75 && activeOurTouchEvent.eventsAndCallbacks.hasOwnProperty("swipeRight")){
+                    }else if(ourTouch.getStopPressing() - ourTouch.getStartPressing() <= 500 && ourTouch.getFirstScreenX() - ourTouch.screenX >= 50 && activeOurTouchEvent.eventsAndCallbacks.hasOwnProperty("swipeRight")){
                         activeOurTouchEvent.eventsAndCallbacks.swipeRight(event, activeOurTouchEvent);
-                    }else if(ourTouch.getStopPressing() - ourTouch.getStartPressing() <= 500 && ourTouch.getFirstScreenX - ourTouch.screenX <= -75 && activeOurTouchEvent.eventsAndCallbacks.hasOwnProperty("swipeLeft")){
+                    }else if(ourTouch.getStopPressing() - ourTouch.getStartPressing() <= 500 && ourTouch.getFirstScreenX() - ourTouch.screenX <= -50 && activeOurTouchEvent.eventsAndCallbacks.hasOwnProperty("swipeLeft")){
                         activeOurTouchEvent.eventsAndCallbacks.swipeLeft(event, activeOurTouchEvent);
                     }else if(activeOurTouchEvent.eventsAndCallbacks.hasOwnProperty("holded")){
                         activeOurTouchEvent.eventsAndCallbacks.holded(event, activeOurTouchEvent);
