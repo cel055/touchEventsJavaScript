@@ -1,5 +1,5 @@
 var OurTouchEvents = function(){
-    var listOurTouches = new Array();
+    var listOurTouchEvent = new Array();
     var activeOurTouchEvent = null;
     var eventStartType;
     var eventMoveType;
@@ -31,7 +31,7 @@ var OurTouchEvents = function(){
         
         this.findOurTouch = function(id){
             for(var i = 0; i < this.listOurTouches.length; i++){
-                if(this.listOurTouches[i].getId() == id){
+                if(this.listOurTouches[i].id == id){
                     return i;
                 }
             }
@@ -39,10 +39,11 @@ var OurTouchEvents = function(){
         }
         
         this.touchesToString = function(){
-            console.log("this id : " + this.id);
+            var string = "this our touch event id : " + this.id + "\n";
             for(var i = 0; i < this.listOurTouches.length; i++){
-                console.log(this.listOurTouches[i].attrToString() + "\n");
+                string += this.listOurTouches[i].attrToString() + "\n";
             }
+            return string;
         }
         
         this.removeOurTouchEvent = function(){
@@ -54,29 +55,29 @@ var OurTouchEvents = function(){
                 this.listHtmlObj[i].removeEventListener("touchcancel", function(e){touchEnd(e, ourTouchEvent)}, false);
             }
             
-            size = this.listOurTouches.length;
+            size = listOurTouchEvent.length;
             for(var i = 0; i < size; i++){
-                if(listOurTouches[i].id == this.id){
-                    listOurTouches.splice(i, 1);
+                if(listOurTouchEvent[i].id == this.id){
+                    listOurTouchEvent.splice(i, 1);
                     break;
                 }
             }
         }
     }
     
-    var OurTouch = function(touch, first){
-        var id = ((window.TouchEvent) ? touch.identifier : touch.pointerId);
-        var target = touch.target;
-        var startPressing = new Date().getTime();
-        var stopPressing = null;
-        var firstTouch = first;
+    var OurTouch = function(touch){
+        this.id = ((window.TouchEvent) ? touch.identifier : touch.pointerId);
+        this.target = touch.target;
+        this.startPressing = new Date().getTime();
+        this.stopPressing = null;
+        this.firstTouch = false;
         
-        var firstScreenX = touch.screenX;
-        var firstScreenY = touch.screenY;
-        var firstPageX = touch.pageX;
-        var firstPageY = touch.pageY;
-        var firstClientX = touch.clientX;
-        var firstClientY = touch.clientY;
+        this.firstScreenX = touch.screenX;
+        this.firstScreenY = touch.screenY;
+        this.firstPageX = touch.pageX;
+        this.firstPageY = touch.pageY;
+        this.firstClientX = touch.clientX;
+        this.firstClientY = touch.clientY;
         
         this.screenX = touch.screenX;
         this.screenY = touch.screenY;
@@ -85,54 +86,6 @@ var OurTouchEvents = function(){
         this.clientX = touch.clientX;
         this.clientY = touch.clientY;
         this.firstMove = true;
-        
-        this.getId = function(){
-            return id;
-        }
-        
-        this.getTarget = function(){
-            return target;
-        }
-        
-        this.isFirstTouch = function(){
-            return firstTouch;
-        }
-        
-        this.getStartPressing = function(){
-            return startPressing;
-        }
-        
-        this.setStopPressing = function(){
-            stopPressing = new Date().getTime();
-        }
-        
-        this.getStopPressing = function(){
-            return stopPressing;
-        }
-        
-        this.getFirstScreenX = function(){
-            return firstScreenX;
-        }
-        
-        this.getFirstScreenY = function(){
-            return firstScreenY;
-        }
-        
-        this.getFirstPageX = function(){
-            return firstPageX;
-        }
-        
-        this.getFirstPageY = function(){
-            return firstPageY;
-        }
-        
-        this.getFirstClientX = function(){
-            return firstClientX
-        }
-        
-        this.getFirstClientY = function(){
-            return firstClientY;
-        }
         
         this.update = function(touch){
             this.screenX = touch.screenX;
@@ -144,7 +97,7 @@ var OurTouchEvents = function(){
         }
         
         this.attrToString = function(){
-            return "{id : " + id + "\nisFirstTouch : " + firstTouch + "\ntarget id : " + target.id + "\nstartPressing : " + startPressing + "\nstopPressing : " + stopPressing + "\nfirstScreenX : " + firstScreenX + "\nfirstScreenY : " + firstScreenY + "\nfirstPageX : " + firstPageX + "\nfirstPageY : " + firstPageY + "\nfirstClientX : " + firstClientX + "\nfirstClientY : " + firstClientY + "\nscreenX : " + this.screenX + "\nscreenY : " + this.screenY + "\npageX : " + this.pageX + "\npageY : " + this.pageY + "\nclientX : " + this.clientX + "\nclientY : " + this.clientY + "}";
+            return "{id : " + this.id + "\nisFirstTouch : " + this.firstTouch + "\ntarget id : " + this.target.id + "\nstartPressing : " + this.startPressing + "\nstopPressing : " + this.stopPressing + "\nfirstScreenX : " + this.firstScreenX + "\nfirstScreenY : " + this.firstScreenY + "\nfirstPageX : " + this.firstPageX + "\nfirstPageY : " + this.firstPageY + "\nfirstClientX : " + this.firstClientX + "\nfirstClientY : " + this.firstClientY + "\nscreenX : " + this.screenX + "\nscreenY : " + this.screenY + "\npageX : " + this.pageX + "\npageY : " + this.pageY + "\nclientX : " + this.clientX + "\nclientY : " + this.clientY + "}";
         }
     }
     
@@ -163,7 +116,7 @@ var OurTouchEvents = function(){
             ourTouchEvent.id = Math.floor(Math.random() * 100);
         }while(notUniqueId(ourTouchEvent.id));
 
-        listOurTouches.push(ourTouchEvent);
+        listOurTouchEvent.push(ourTouchEvent);
         
         var size = localList.length;
         for(var i = 0; i < size; i++){
@@ -179,15 +132,14 @@ var OurTouchEvents = function(){
         var listNewOurTouch = new Array();
         var newOurTouch;
         for(var i = 0; i < event.changedTouches.length; i++){
+            newOurTouch = new OurTouch(event.changedTouches[i]);
             if(activeOurTouchEvent.listOurTouches.length <= 0){
-                newOurTouch = new OurTouch(event.changedTouches[i], true);
-                activeOurTouchEvent.listOurTouches.push(newOurTouch);
-                listNewOurTouch.push(newOurTouch);
+                newOurTouch.firstTouch = true;
             }else{
-                newOurTouch = new OurTouch(event.changedTouches[i], false);
-                activeOurTouchEvent.listOurTouches.push(newOurTouch);
-                listNewOurTouch.push(newOurTouch);
+                newOurTouch.firstTouch = false;
             }
+            activeOurTouchEvent.listOurTouches.push(newOurTouch);
+            listNewOurTouch.push(newOurTouch);
         }
         activeOurTouchEvent.stillActive = true;
         if(activeOurTouchEvent.eventsAndCallbacks.hasOwnProperty("start")){
@@ -208,15 +160,15 @@ var OurTouchEvents = function(){
                 ourTouch = activeOurTouchEvent.listOurTouches[index];
                 ourTouch.update(touches[i]);
                 touchesMoved.push(ourTouch);
-
-                if(ourTouch.firstMove && (activeOurTouchEvent.eventsAndCallbacks.hasOwnProperty("swipeRight") || activeOurTouchEvent.eventsAndCallbacks.hasOwnProperty("swipeLeft")) && Math.abs(ourTouch.getFirstScreenX() - ourTouch.screenX) >= 10){
-                    event.preventDefault();
+                if(ourTouch.firstMove){
+                    if(activeOurTouchEvent.eventsAndCallbacks.hasOwnProperty("moving")){
+                        event.preventDefault();
+                    }else if((activeOurTouchEvent.eventsAndCallbacks.hasOwnProperty("swipeRight") || activeOurTouchEvent.eventsAndCallbacks.hasOwnProperty("swipeLeft")) && Math.abs(ourTouch.firstScreenX - ourTouch.screenX) >= 10){
+                        event.preventDefault();
+                    }else if((activeOurTouchEvent.eventsAndCallbacks.hasOwnProperty("swipeUp") || activeOurTouchEvent.eventsAndCallbacks.hasOwnProperty("swipeDown")) && Math.abs(ourTouch.firstScreenY - ourTouch.screenY) >= 10){
+                        event.preventDefault();
+                    }
                     ourTouch.firstMove = false;
-                    console.log("called prevent defaul swipe sides");
-                }else if(ourTouch.firstMove && (activeOurTouchEvent.eventsAndCallbacks.hasOwnProperty("swipeUp") || activeOurTouchEvent.eventsAndCallbacks.hasOwnProperty("swipeDown")) && Math.abs(ourTouch.getFirstScreenY() - ourTouch.screenY) >= 10){
-                    event.preventDefault();
-                    ourTouch.firstMove = false;
-                    console.log("called prevent defaul swipe up/down");
                 }
             }else{
                 console.log("touch not founded");
@@ -240,7 +192,7 @@ var OurTouchEvents = function(){
         for(var i = 0; i < size; i++){
             var index = activeOurTouchEvent.findOurTouch(touches[i].identifier);
             if(index >= 0){
-                activeOurTouchEvent.listOurTouches[index].setStopPressing();
+                activeOurTouchEvent.listOurTouches[index].stopPressing = new Date().getTime();
                 activeOurTouchEvent.listOurTouches[index].update(touches[i]);
                 deactivatedTouches.push(activeOurTouchEvent.listOurTouches[index]);
 //                activeOurTouchEvent.listOurTouches.splice(index, 1);
@@ -253,14 +205,12 @@ var OurTouchEvents = function(){
             var ourTouch;
             for(var i = 0; i < deactivatedTouches.length; i++){
                 ourTouch = deactivatedTouches[i];
-                if(ourTouch.isFirstTouch){
-                    console.log("time pressed : " + (ourTouch.getStopPressing() - ourTouch.getStartPressing()));
-                    console.log("moved on X : " + (ourTouch.getFirstScreenX() - ourTouch.screenX));
-                    if(ourTouch.getStopPressing() - ourTouch.getStartPressing() <= 100 && activeOurTouchEvent.eventsAndCallbacks.hasOwnProperty("tap") && Math.abs(ourTouch.getFirstScreenX() - ourTouch.screenX) <= 5 && Math.abs(ourTouch.getFirstScreenY() - ourTouch.screenY) <= 5){
+                if(ourTouch.firstTouch){
+                    if(ourTouch.stopPressing - ourTouch.startPressing <= 100 && activeOurTouchEvent.eventsAndCallbacks.hasOwnProperty("tap") && Math.abs(ourTouch.firstScreenX - ourTouch.screenX) <= 5 && Math.abs(ourTouch.firstScreenY - ourTouch.screenY) <= 5){
                         activeOurTouchEvent.eventsAndCallbacks.tap(event, activeOurTouchEvent);
-                    }else if(ourTouch.getStopPressing() - ourTouch.getStartPressing() <= 500 && ourTouch.getFirstScreenX() - ourTouch.screenX >= 50 && activeOurTouchEvent.eventsAndCallbacks.hasOwnProperty("swipeRight")){
+                    }else if(ourTouch.stopPressing - ourTouch.startPressing <= 500 && ourTouch.firstScreenX - ourTouch.screenX >= 50 && activeOurTouchEvent.eventsAndCallbacks.hasOwnProperty("swipeRight")){
                         activeOurTouchEvent.eventsAndCallbacks.swipeRight(event, activeOurTouchEvent);
-                    }else if(ourTouch.getStopPressing() - ourTouch.getStartPressing() <= 500 && ourTouch.getFirstScreenX() - ourTouch.screenX <= -50 && activeOurTouchEvent.eventsAndCallbacks.hasOwnProperty("swipeLeft")){
+                    }else if(ourTouch.stopPressing - ourTouch.startPressing <= 500 && ourTouch.firstScreenX - ourTouch.screenX <= -50 && activeOurTouchEvent.eventsAndCallbacks.hasOwnProperty("swipeLeft")){
                         activeOurTouchEvent.eventsAndCallbacks.swipeLeft(event, activeOurTouchEvent);
                     }else if(activeOurTouchEvent.eventsAndCallbacks.hasOwnProperty("holded")){
                         activeOurTouchEvent.eventsAndCallbacks.holded(event, activeOurTouchEvent);
@@ -276,9 +226,9 @@ var OurTouchEvents = function(){
     }
 
     function notUniqueId(id){
-        var size = listOurTouches.length;
+        var size = listOurTouchEvent.length;
         for(var i = 0; i < size; i++){
-            if(listOurTouches[i].id == id){
+            if(listOurTouchEvent[i].id == id){
                 return true;
             }
         }
