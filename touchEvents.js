@@ -5,16 +5,19 @@ var OurTouchEvents = function(){
     var eventMoveType;
     var eventEndType;
     var eventCancelType;
+    var isPointer = false;
     if(window.MSPointerEvent){
         eventStartType = "MSPointerDown";
         eventMoveType = "MSPointerMove";
         eventEndType = "MSPointerUp";
         eventCancelType = "MSPointerCancel";
+        isPointer = true;
     }else if(window.PointerEvent){
         eventStartType = "pointerdown";
         eventMoveType = "pointermove";
         eventEndType = "pointerup";
         eventCancelType = "pointercancel";
+        isPointer = true;
     }else{
         eventStartType = "touchstart";
         eventMoveType = "touchmove";
@@ -28,6 +31,7 @@ var OurTouchEvents = function(){
         this.eventsAndCallbacks = eventsAndCallbacksP;
         this.stillActive;
         this.listOurTouches = new Array();
+        this.listRemovedOurTouches = new Array();
         
         this.findOurTouch = function(id){
             for(var i = 0; i < this.listOurTouches.length; i++){
@@ -46,13 +50,21 @@ var OurTouchEvents = function(){
             return string;
         }
         
+        this.deactivetedTouchesToString = function(){
+            var string = "this our touch event id : " + this.id + "\n";
+            for(var i = 0; i < this.removedOurTouches.length; i++){
+                string += this.removedOurTouches[i].attrToString() + "\n";
+            }
+            return string;
+        }
+        
         this.removeOurTouchEvent = function(){
             var size = this.listHtmlObj.length;
             for(var i = 0; i < size; i++){
-                this.listHtmlObj[i].removeEventListener("touchstart", function(e){touchStart(e, ourTouchEvent)}, false);
-                this.listHtmlObj[i].removeEventListener("touchmove", function(e){touchMove(e, ourTouchEvent)}, false);
-                this.listHtmlObj[i].removeEventListener("touchend", function(e){touchEnd(e, ourTouchEvent)}, false);
-                this.listHtmlObj[i].removeEventListener("touchcancel", function(e){touchEnd(e, ourTouchEvent)}, false);
+                this.listHtmlObj[i].removeEventListener(eventStartType, function(e){touchStart(e, ourTouchEvent)}, false);
+                this.listHtmlObj[i].removeEventListener(eventMoveType, function(e){touchMove(e, ourTouchEvent)}, false);
+                this.listHtmlObj[i].removeEventListener(eventEndType, function(e){touchEnd(e, ourTouchEvent)}, false);
+                this.listHtmlObj[i].removeEventListener(eventCancelType, function(e){touchEnd(e, ourTouchEvent)}, false);
             }
             
             size = listOurTouchEvent.length;
@@ -66,11 +78,12 @@ var OurTouchEvents = function(){
     }
     
     var OurTouch = function(touch){
-        this.id = ((window.TouchEvent) ? touch.identifier : touch.pointerId);
+        this.id = ((isPointer) ? touch.pointerId : touch.identifier);
         this.target = touch.target;
         this.startPressing = new Date().getTime();
         this.stopPressing = null;
         this.firstTouch = false;
+        this.active = true;
         
         this.firstScreenX = touch.screenX;
         this.firstScreenY = touch.screenY;
@@ -97,7 +110,7 @@ var OurTouchEvents = function(){
         }
         
         this.attrToString = function(){
-            return "{id : " + this.id + "\nisFirstTouch : " + this.firstTouch + "\ntarget id : " + this.target.id + "\nstartPressing : " + this.startPressing + "\nstopPressing : " + this.stopPressing + "\nfirstScreenX : " + this.firstScreenX + "\nfirstScreenY : " + this.firstScreenY + "\nfirstPageX : " + this.firstPageX + "\nfirstPageY : " + this.firstPageY + "\nfirstClientX : " + this.firstClientX + "\nfirstClientY : " + this.firstClientY + "\nscreenX : " + this.screenX + "\nscreenY : " + this.screenY + "\npageX : " + this.pageX + "\npageY : " + this.pageY + "\nclientX : " + this.clientX + "\nclientY : " + this.clientY + "}";
+            return "{\nid : " + this.id + "\nisFirstTouch : " + this.firstTouch + "\ntarget id : " + this.target.id + "\nstartPressing :\t" + this.startPressing + "\nstopPressing :\t" + this.stopPressing + "\nfirstScreenX :\t" + this.firstScreenX + "\tfirstScreenY :\t" + this.firstScreenY + "\ncurreScreenX :\t" + this.screenX + "\tcurreScreenY :\t" + this.screenY + "\nfirstPageX :\t" + this.firstPageX + "\tfirstPageY :\t" + this.firstPageY + "\ncurrePageX :\t" + this.pageX + "\tcurrePageY :\t" + this.pageY + "\nfirstClientX :\t" + this.firstClientX + "\tfirstClientY :\t" + this.firstClientY + "\ncurreClientX :\t" + this.clientX + "\tcurreClientY :\t" + this.clientY + "\n}";
         }
     }
     
@@ -129,10 +142,17 @@ var OurTouchEvents = function(){
 
     function touchStart(event, ourTouchEvent){
         activeOurTouchEvent = ourTouchEvent;
+        var newTouches;
         var listNewOurTouch = new Array();
         var newOurTouch;
-        for(var i = 0; i < event.changedTouches.length; i++){
-            newOurTouch = new OurTouch(event.changedTouches[i]);
+        if(isPointer){
+            newTouches = new Array();
+            newTouches.push(event);
+        }else{
+            newTouches = event.changedTouches;
+        }
+        for(var i = 0; i < newTouches.length; i++){
+            newOurTouch = new OurTouch(newTouches[i]);
             if(activeOurTouchEvent.listOurTouches.length <= 0){
                 newOurTouch.firstTouch = true;
             }else{
@@ -150,16 +170,22 @@ var OurTouchEvents = function(){
     function touchMove(event, ourTouchEvent){
         activeOurTouchEvent = ourTouchEvent;
         var touches = event.changedTouches;
+        if(isPointer){
+            touches = new Array();
+            touches.push(event);
+        }else{
+            touches = event.changedTouches;
+        }
         var size = touches.length;
-        var touchesMoved = new Array();
+        var ourTouchesMoved = new Array();
         var ourTouch;
 
         for(var i = 0; i < size; i++){
-            var index = activeOurTouchEvent.findOurTouch(touches[i].identifier);
+            var index = activeOurTouchEvent.findOurTouch((isPointer) ? touches[i].pointerId : touches[i].identifier);
             if(index >= 0){
                 ourTouch = activeOurTouchEvent.listOurTouches[index];
                 ourTouch.update(touches[i]);
-                touchesMoved.push(ourTouch);
+                ourTouchesMoved.push(ourTouch);
                 if(ourTouch.firstMove){
                     if(activeOurTouchEvent.eventsAndCallbacks.hasOwnProperty("moving")){
                         event.preventDefault();
@@ -175,26 +201,34 @@ var OurTouchEvents = function(){
             }
         }
         if(activeOurTouchEvent.eventsAndCallbacks.hasOwnProperty("moving")){
-            activeOurTouchEvent.eventsAndCallbacks.moving(event, activeOurTouchEvent, touchesMoved);
+            activeOurTouchEvent.eventsAndCallbacks.moving(event, activeOurTouchEvent, ourTouchesMoved);
         }
     }
 
     function touchEnd(event, ourTouchEvent){
         activeOurTouchEvent = ourTouchEvent;
         
-        if(event.touches.length <= 0){
+        if(activeOurTouchEvent.listOurTouches.length <= 1){
             activeOurTouchEvent.stillActive = false;
         }
         
-        var touches = event.changedTouches;
+        var touches;
+        if(isPointer){
+            touches = new Array();
+            touches.push(event);
+        }else{
+            touches = event.changedTouches;
+        }
         var size = touches.length;
         var deactivatedTouches = new Array();
         for(var i = 0; i < size; i++){
-            var index = activeOurTouchEvent.findOurTouch(touches[i].identifier);
+            var index = activeOurTouchEvent.findOurTouch((isPointer) ? touches[i].pointerId : touches[i].identifier);
             if(index >= 0){
                 activeOurTouchEvent.listOurTouches[index].stopPressing = new Date().getTime();
+                activeOurTouchEvent.listOurTouches[index].active = false;
                 activeOurTouchEvent.listOurTouches[index].update(touches[i]);
                 deactivatedTouches.push(activeOurTouchEvent.listOurTouches[index]);
+                activeOurTouchEvent.listRemovedOurTouches.push(activeOurTouchEvent.listOurTouches[index]);
 //                activeOurTouchEvent.listOurTouches.splice(index, 1);
             }else{
                 console.log("touch not founded");
