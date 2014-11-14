@@ -170,7 +170,7 @@ var OurTouchEvents = function(){
 
     function touchMove(event, ourTouchEvent){
         activeOurTouchEvent = ourTouchEvent;
-        var touches = event.changedTouches;
+        var touches;
         if(isPointer){
             touches = new Array();
             touches.push(event);
@@ -260,6 +260,25 @@ var OurTouchEvents = function(){
     
     function touchCancel(event, ourTouchEvent){
         console.log("touch canceled");
+        var touches;
+        if(isPointer){
+            touches = new Array();
+            touches.push(event);
+        }else{
+            touches = event.changedTouches;
+        }
+        var size = touches.length;
+        for(var i = 0; i < size; i++){
+            var index = ourTouchEvent.findOurTouch((isPointer) ? touches[i].pointerId : touches[i].identifier);
+            if(index >= 0){
+                ourTouchEvent.listOurTouches.splice(index,1);
+            }else{
+                console.log("touch not founded");
+            }
+        }
+        if(ourTouchEvent.listOurTouches.length <= 0){
+            ourTouchEvent.stillActive = false;
+        }
     }
 
     function notUniqueId(id){
