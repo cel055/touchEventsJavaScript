@@ -61,10 +61,10 @@ var OurTouchEvents = function(){
         this.removeOurTouchEvent = function(){
             var size = this.listHtmlObj.length;
             for(var i = 0; i < size; i++){
-                this.listHtmlObj[i].removeEventListener(eventStartType, function(e){touchStart(e, ourTouchEvent)}, false);
-                this.listHtmlObj[i].removeEventListener(eventMoveType, function(e){touchMove(e, ourTouchEvent)}, false);
-                this.listHtmlObj[i].removeEventListener(eventEndType, function(e){touchEnd(e, ourTouchEvent)}, false);
-                this.listHtmlObj[i].removeEventListener(eventCancelType, function(e){touchEnd(e, ourTouchEvent)}, false);
+                this.listHtmlObj[i].removeEventListener(eventStartType, start, false);
+                this.listHtmlObj[i].removeEventListener(eventMoveType, move, false);
+                this.listHtmlObj[i].removeEventListener(eventEndType, end, false);
+                this.listHtmlObj[i].removeEventListener(eventCancelType, cancel, false);
             }
             
             size = listOurTouchEvent.length;
@@ -116,14 +116,15 @@ var OurTouchEvents = function(){
     
     this.addTouchEvent = function (listHtmlObj, eventsAndCallbacks){
         var localList;
-        if(listHtmlObj.constructor.toString().indexOf("Array") > -1 || listHtmlObj.constructor.toString().indexOf("NodeList") > -1){
+        if(typeof listHtmlObj == "undefined" || listHtmlObj == null){
+            return
+        }else if(listHtmlObj.constructor.toString().indexOf("Array") > -1 || listHtmlObj.constructor.toString().indexOf("NodeList") > -1){
             localList = listHtmlObj;
         }else{
             localList = new Array();
             localList.push(listHtmlObj);
         }
         var ourTouchEvent = new OurTouchEvent(localList, eventsAndCallbacks);
-        
         
         do{
             ourTouchEvent.id = Math.floor(Math.random() * 100);
@@ -133,13 +134,48 @@ var OurTouchEvents = function(){
         
         var size = localList.length;
         for(var i = 0; i < size; i++){
-            localList[i].addEventListener(eventStartType, function(e){touchStart(e, ourTouchEvent)}, false);
-            localList[i].addEventListener(eventMoveType, function(e){touchMove(e, ourTouchEvent)}, false);
-            localList[i].addEventListener(eventEndType, function(e){touchEnd(e, ourTouchEvent)}, false);
-            localList[i].addEventListener(eventCancelType, function(e){touchCancel(e, ourTouchEvent)}, false);
+            localList[i].addEventListener(eventStartType, start, false);
+            localList[i].addEventListener(eventMoveType, move, false);
+            localList[i].addEventListener(eventEndType, end, false);
+            localList[i].addEventListener(eventCancelType, cancel, false);
+        }
+    }
+    
+    this.removeTouchEventByElement = function(htmlObject){
+        var i = findOurTouchEventByElement(htmlObject);
+        if(i >= 0){
+            listOurTouchEvent[i].removeOurTouchEvent();
         }
     }
 
+    function start(event){
+        var i = findOurTouchEventByElement(event.target);
+        if(i >= 0){
+            touchStart(event, listOurTouchEvent[i]);
+        }
+    }
+    
+    function move(event){
+        var i = findOurTouchEventByElement(event.target);
+        if(i >= 0){
+            touchMove(event, listOurTouchEvent[i]);
+        }
+    }
+    
+    function end(event){
+        var i = findOurTouchEventByElement(event.target);
+        if(i >= 0){
+            touchEnd(event, listOurTouchEvent[i]);
+        }
+    }
+    
+    function cancel(event){
+        var i = findOurTouchEventByElement(event.target);
+        if(i >= 0){
+            touchCancel(event, listOurTouchEvent[i]);
+        }
+    }
+    
     function touchStart(event, ourTouchEvent){
         activeOurTouchEvent = ourTouchEvent;
         var newTouches;
@@ -289,5 +325,18 @@ var OurTouchEvents = function(){
             }
         }
         return false;
+    }
+    
+    function findOurTouchEventByElement(htmlObject){
+        var size;
+        for(var i = 0; i < listOurTouchEvent.length; i++){
+            size = listOurTouchEvent[i].listHtmlObj.length;
+            for(var j = 0; j < size; j++){
+                if(listOurTouchEvent[i].listHtmlObj[j].isSameNode(htmlObject)){
+                    return i;
+                }
+            }
+        }
+        return -1;
     }
 }
